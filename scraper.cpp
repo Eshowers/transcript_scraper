@@ -6,18 +6,15 @@
  */
 
 
-#include <climits>
-#include <getopt.h>
 #include <fstream>
-#include <set>
-#include <thread>
 #include <vector>
 #include <map>
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
-static map<string, vector<pair<string, size_t> > > members;
+static map<string, vector<string>> members;
 
 void Usage() {
     cout << "Proper usage: ./scraper <filename>" << endl;
@@ -36,20 +33,40 @@ void digest(string & line) {
         return;
     }
 
-    vector<pair<string, size_t>> contributions = members[name];
+    vector<string> & contributions = members[name];
 
     string response = line.substr(pos);
-    contributions.push_back(make_pair(response, response.size()));
-    members[name] = contributions;
+    contributions.push_back(response);
+}
 
+size_t countWordsInString(string const& str) {
+    std::stringstream stream(str);
+    std::string oneWord;
+    size_t count = 0;
+
+    while(stream >> oneWord) { ++count;}
+
+    return count;
+}
+
+void analyze_contributions(vector<string> & responses, size_t & num_words, size_t & num_chars) {
+    for (size_t i = 0; i < responses.size(); i++) {
+        num_words += countWordsInString(responses[i]);
+        num_chars += responses[i].size();
+    }
 }
 
 void displayResults() {
     cout << "Outputting results" << endl;
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
+
+        size_t num_words = 0;
+        size_t num_chars = 0;
+        analyze_contributions(iterator->second, num_words, num_chars);
         cout << "Participant: " << iterator->first << endl;
         cout << "Number of contributions: " << iterator->second.size() << endl;
+        cout << "Number of words: " << num_words << endl;
         cout << endl;
     }
 }
