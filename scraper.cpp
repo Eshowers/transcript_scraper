@@ -5,7 +5,6 @@
  * Usage: ./scraper <filename>
  */
 
-
 #include <fstream>
 #include <vector>
 #include <map>
@@ -21,6 +20,13 @@ void Usage() {
     exit(1);
 }
 
+bool isBlackListed(string &name) {
+    //names must begin with letters (takes care of timestamps)
+    if (isalpha(name.c_str()[1]) == 0) return true;
+
+    return false;
+}
+
 void digest(string & line) {
     size_t pos = line.find(":", 0);
 
@@ -33,6 +39,8 @@ void digest(string & line) {
         return;
     }
 
+    if (isBlackListed(name)) return;
+
     vector<string> & contributions = members[name];
 
     string response = line.substr(pos);
@@ -44,7 +52,11 @@ size_t countWordsInString(string const& str) {
     std::string oneWord;
     size_t count = 0;
 
-    while(stream >> oneWord) { ++count;}
+    while(stream >> oneWord) {
+        ++count;
+
+        //modify definitions of word here
+    }
 
     return count;
 }
@@ -56,8 +68,13 @@ void analyze_contributions(vector<string> & responses, size_t & num_words, size_
     }
 }
 
-void displayResults() {
+void displayResults(string & filename) {
+    cout << endl;
+    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
     cout << "Outputting results" << endl;
+    cout << "Filename: " << filename << endl;
+    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
+    cout << endl;
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
@@ -67,16 +84,22 @@ void displayResults() {
         cout << "Participant: " << iterator->first << endl;
         cout << "Number of contributions: " << iterator->second.size() << endl;
         cout << "Number of words: " << num_words << endl;
+        cout << "Number of characters: " << num_chars << endl;
+        cout << "Average contribution length (words): " << num_words / iterator->second.size() << endl;
+        cout << "Average contribution length (chars): " << num_chars / iterator->second.size() << endl;
         cout << endl;
     }
+
+    //*** NOTE: WILL WRITE OUT TO .csv files
 }
 
 int main(int argc, char **argv) {
 
     if (argc > 2) cout << "Ignoring excess arguments..." << endl;
 
+    string filename = string(argv[1]);
     ifstream transcript;
-    transcript.open(argv[1]);
+    transcript.open(filename);
     if (!transcript) {
         cerr << "Error opening file." << endl;
         Usage();
@@ -88,5 +111,5 @@ int main(int argc, char **argv) {
         digest(line);
     }
 
-    displayResults();
+    displayResults(filename);
 }
