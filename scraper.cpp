@@ -13,7 +13,8 @@
  * Will generate a .csv file called "transcript_aggregate_data.csv" in the
  * directory of the executable, which can be opened in excel.
  *
- * Important: make sure there is no csv in the directory with that name already!
+ * Important: If a file of the name "transcript_aggregate_data.csv" exists
+ * in the directory of the executable, it's contents will be overwritten.
  */
 
 #include <fstream>
@@ -24,7 +25,6 @@
 
 using namespace std;
 
-static map<string, vector<string>> members;
 static string transcripts_directory = "Data/Transcripts/"; //where the transcripts are located
 static bool verbose = false;
 
@@ -40,7 +40,7 @@ bool isBlackListed(string &name) {
     return false;
 }
 
-void digest(string & line) {
+void digest(string & line, map<string, vector<string>> & members) {
     size_t pos = line.find(":", 0);
 
     //the first occurance of ":" in the string will delineate the name
@@ -81,7 +81,7 @@ void analyze_contributions(vector<string> & responses, size_t & num_words, size_
     }
 }
 
-void writeResults(string & filename) {
+void writeResults(string & filename, map<string, vector<string>> & members) {
     if (verbose) {
         cout << endl;
         cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
@@ -93,20 +93,15 @@ void writeResults(string & filename) {
 
 
     size_t pos = filename.find_last_of('.');
-    string file_path = filename.substr(0,pos);  //remove extension
-    size_t pos2 = file_path.find_last_of('/');
-    string group_name = file_path.substr(pos2 + 1);
+    string group_name = filename.substr(0,pos);  //remove extension
 
     fstream outFile;
-    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::ate);
+    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::app);
     if (!outFile) {
         cerr << "Unable to open file..." << endl;
         cerr << "Continuing..." << endl;
         return;
     }
-
-    outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
-               "Average contribution length (words),Average contribution length (chars)" << endl;
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
@@ -126,8 +121,6 @@ void writeResults(string & filename) {
         outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
                 << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << endl;
     }
-
-    //*** NOTE: WILL WRITE OUT TO .csv files
 }
 
 int main(int argc, char **argv) {
@@ -143,26 +136,37 @@ int main(int argc, char **argv) {
         Usage();
     }
 
+    //initialize outfile
+    fstream outFile;
+    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::trunc);
+    if (!outFile) cerr << "Unable to initialize .csv file" << endl;
+
+    //can farther parse group ID!
+
+    //fields
+    outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
+               "Average contribution length (words),Average contribution length (chars)" << endl;
+
     string t_name;
     while (list.good()) {
-        cout << "." << endl;
         getline(list, t_name);
+
+        map<string, vector<string>> members;
 
         ifstream transcript;
         transcript.open(transcripts_directory + t_name);
         if (!transcript) {
-            cerr << "Error opening transcript file: " << t_name << endl;
-            Usage();
+            cerr << "*** Error opening transcript file: " << t_name << endl;
+            continue;
         }
 
         string line;
         while (transcript.good()) {
             getline(transcript, line);
-            digest(line);
+            digest(line, members);
         }
 
-    writeResults(t_name);
-    members.clear(); //important!
-
+        writeResults(t_name, members);
+        cout << t_name << endl;
     }
 }
