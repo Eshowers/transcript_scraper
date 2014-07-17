@@ -76,6 +76,22 @@ void displayResults(string & filename) {
     cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
     cout << endl;
 
+    size_t pos = filename.find_last_of('.');
+    string file_path = filename.substr(0,pos);  //remove extension
+    size_t pos2 = file_path.find_last_of('/');
+    string group_name = file_path.substr(pos2 + 1);
+
+    fstream outFile;
+    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::ate);
+    if (!outFile) {
+        cout << "Unable to open file..." << endl;
+        cout << "Continuing..." << endl;
+        return;
+    }
+
+    outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
+               "Average contribution length (words),Average contribution length (chars)" << endl;
+
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
         size_t num_words = 0;
@@ -88,6 +104,9 @@ void displayResults(string & filename) {
         cout << "Average contribution length (words): " << num_words / iterator->second.size() << endl;
         cout << "Average contribution length (chars): " << num_chars / iterator->second.size() << endl;
         cout << endl;
+
+        outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
+                << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << endl;
     }
 
     //*** NOTE: WILL WRITE OUT TO .csv files
