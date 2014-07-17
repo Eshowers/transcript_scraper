@@ -22,24 +22,68 @@
 #include <map>
 #include <iostream>
 #include <sstream>
+#include <algorithm>
+#include <functional>
+#include <cctype>
+#include <locale>
 
 using namespace std;
 
+/* GLOBAL STATE VARIABLES */
 static string transcripts_directory = "Data/Transcripts/"; //where the transcripts are located
-static bool verbose = false;
+static bool verbose = false; //will be silent unless an error occurs
 
+/* UTILS */
+
+// trim from start
+static inline std::string &ltrim(std::string &s) {
+        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
+        return s;
+}
+
+// trim from end
+static inline std::string &rtrim(std::string &s) {
+        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
+        return s;
+}
+
+// trim from both ends
+static inline std::string &trim(std::string &s) {
+        return ltrim(rtrim(s));
+}
+
+
+/* Function: Usage(...) {}
+ * -----------------------------------------------
+ * Prints proper usage and exits
+ */
 void Usage() {
     cout << "Proper usage: ./scraper <filename>" << endl;
     exit(1);
 }
 
-bool isBlackListed(string &name) {
-    //names must begin with letters (takes care of timestamps)
-    if (isalpha(name.c_str()[1]) == 0) return true;
+/* Function: isBlacklisted(...) {}
+ * -----------------------------------------------
+ * Does basic error checking to try to prevent erroneous errors from
+ * being written to CSV.
+ */
+bool isBlacklisted(string &name) {
 
+    const char * c_name = name.c_str();
+    //names must begin with letters (takes care of timestamps)
+    if (isalpha(c_name[1]) == 0) return true;
+
+    if (name == "Date") return true;
+    if (name == "Time") return true;
     return false;
 }
 
+/* Function: digest(...) {}
+ * -----------------------------------------------
+ * Finds the first instance of ":" in the line, delineating the participant's name.
+ * If the name is not blacklisted, the responses is added to the vector of contributions
+ * associated with their name in the members map.
+ */
 void digest(string & line, map<string, vector<string>> & members) {
     size_t pos = line.find(":", 0);
 
@@ -47,12 +91,12 @@ void digest(string & line, map<string, vector<string>> & members) {
     string name;
     if (pos != string::npos) {
         name = line.substr(0, pos);
-        if (verbose) cout << name << endl;
+        trim(name);
     } else {
         return;
     }
 
-    if (isBlackListed(name)) return;
+    if (isBlacklisted(name)) return;
 
     vector<string> & contributions = members[name];
 
@@ -60,6 +104,10 @@ void digest(string & line, map<string, vector<string>> & members) {
     contributions.push_back(response);
 }
 
+/* Function: countWordsInString(...) {}
+ * -----------------------------------------------
+ * Counts words in a string using a stringstream
+ */
 size_t countWordsInString(string const& str) {
     std::stringstream stream(str);
     std::string oneWord;
@@ -74,13 +122,22 @@ size_t countWordsInString(string const& str) {
     return count;
 }
 
-void analyze_contributions(vector<string> & responses, size_t & num_words, size_t & num_chars) {
+/* Function: analyzeContributions(...) {}
+ * -----------------------------------------------
+ * Iterates through vector of contributions to tabulate the number of words in their responses,
+ * and the number of characters in their responses
+ */
+void analyzeContributions(vector<string> & responses, size_t & num_words, size_t & num_chars) {
     for (size_t i = 0; i < responses.size(); i++) {
         num_words += countWordsInString(responses[i]);
         num_chars += responses[i].size();
     }
 }
 
+/* Function: writeResults(...) {}
+ * -----------------------------------------------
+ * Takes data structure, tabulates necessary statistics, and writes it to the .csv
+ */
 void writeResults(string & filename, map<string, vector<string>> & members) {
     if (verbose) {
         cout << endl;
@@ -97,17 +154,12 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
 
     fstream outFile;
     outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::app);
-    if (!outFile) {
-        cerr << "Unable to open file..." << endl;
-        cerr << "Continuing..." << endl;
-        return;
-    }
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
         size_t num_words = 0;
         size_t num_chars = 0;
-        analyze_contributions(iterator->second, num_words, num_chars);
+        analyzeContributions(iterator->second, num_words, num_chars);
         if (verbose) {
             cout << "Participant: " << iterator->first << endl;
             cout << "Number of contributions: " << iterator->second.size() << endl;
@@ -121,16 +173,17 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
         outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
                 << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << endl;
     }
+
+    //also should generate a CSV with all of participant's responses!
+    //(i.e. with name <group_name_PARTICIPANT_NAME> (just an interation of the vector))
 }
 
 int main(int argc, char **argv) {
 
     if (argc > 2) cout << "Ignoring excess arguments..." << endl;
 
-    string filename = string(argv[1]);
-
     ifstream list;
-    list.open(filename);
+    list.open(string(argv[1]));
     if (!list) {
         cerr << "Error opening file." << endl;
         Usage();
@@ -143,7 +196,7 @@ int main(int argc, char **argv) {
 
     //can farther parse group ID!
 
-    //fields
+    //Fields of the .csv. Modify these if you change the way the .csv is written.
     outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
                "Average contribution length (words),Average contribution length (chars)" << endl;
 
@@ -167,6 +220,6 @@ int main(int argc, char **argv) {
         }
 
         writeResults(t_name, members);
-        cout << t_name << endl;
+        if (verbose) cout << t_name << endl;
     }
 }
