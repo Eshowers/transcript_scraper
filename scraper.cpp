@@ -1,8 +1,19 @@
 /* Scraper.cpp
  * --------------------
- * Scrapes the transcript data, and prints out relevant data. (Will rewrite to output to data file later)
+ * Scrapes the transcript data, writing the data to a .csv file.
  *
- * Usage: ./scraper <filename>
+ * Usage:
+ * Takes a .txt file of all file names to be scraped. This can be generated
+ * by moving into the directory containing the .txt files and typing: "ls > list.txt"
+ * Move the list.txt into the directory of the executable, edit it, and remove
+ * the line that contains "list.txt"
+ *
+ * Usage: ./scraper list.txt
+ *
+ * Will generate a .csv file called "transcript_aggregate_data.csv" in the
+ * directory of the executable, which can be opened in excel.
+ *
+ * Important: make sure there is no csv in the directory with that name already!
  */
 
 #include <fstream>
@@ -14,6 +25,8 @@
 using namespace std;
 
 static map<string, vector<string>> members;
+static string transcripts_directory = "Data/Transcripts/"; //where the transcripts are located
+static bool verbose = false;
 
 void Usage() {
     cout << "Proper usage: ./scraper <filename>" << endl;
@@ -34,7 +47,7 @@ void digest(string & line) {
     string name;
     if (pos != string::npos) {
         name = line.substr(0, pos);
-        //cout << name << endl;
+        if (verbose) cout << name << endl;
     } else {
         return;
     }
@@ -68,13 +81,16 @@ void analyze_contributions(vector<string> & responses, size_t & num_words, size_
     }
 }
 
-void displayResults(string & filename) {
-    cout << endl;
-    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-    cout << "Outputting results" << endl;
-    cout << "Filename: " << filename << endl;
-    cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-    cout << endl;
+void writeResults(string & filename) {
+    if (verbose) {
+        cout << endl;
+        cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
+        cout << "Outputting results" << endl;
+        cout << "Filename: " << filename << endl;
+        cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
+        cout << endl;
+    }
+
 
     size_t pos = filename.find_last_of('.');
     string file_path = filename.substr(0,pos);  //remove extension
@@ -84,8 +100,8 @@ void displayResults(string & filename) {
     fstream outFile;
     outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::ate);
     if (!outFile) {
-        cout << "Unable to open file..." << endl;
-        cout << "Continuing..." << endl;
+        cerr << "Unable to open file..." << endl;
+        cerr << "Continuing..." << endl;
         return;
     }
 
@@ -97,13 +113,15 @@ void displayResults(string & filename) {
         size_t num_words = 0;
         size_t num_chars = 0;
         analyze_contributions(iterator->second, num_words, num_chars);
-        cout << "Participant: " << iterator->first << endl;
-        cout << "Number of contributions: " << iterator->second.size() << endl;
-        cout << "Number of words: " << num_words << endl;
-        cout << "Number of characters: " << num_chars << endl;
-        cout << "Average contribution length (words): " << num_words / iterator->second.size() << endl;
-        cout << "Average contribution length (chars): " << num_chars / iterator->second.size() << endl;
-        cout << endl;
+        if (verbose) {
+            cout << "Participant: " << iterator->first << endl;
+            cout << "Number of contributions: " << iterator->second.size() << endl;
+            cout << "Number of words: " << num_words << endl;
+            cout << "Number of characters: " << num_chars << endl;
+            cout << "Average contribution length (words): " << num_words / iterator->second.size() << endl;
+            cout << "Average contribution length (chars): " << num_chars / iterator->second.size() << endl;
+            cout << endl;
+        }
 
         outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
                 << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << endl;
@@ -117,18 +135,34 @@ int main(int argc, char **argv) {
     if (argc > 2) cout << "Ignoring excess arguments..." << endl;
 
     string filename = string(argv[1]);
-    ifstream transcript;
-    transcript.open(filename);
-    if (!transcript) {
+
+    ifstream list;
+    list.open(filename);
+    if (!list) {
         cerr << "Error opening file." << endl;
         Usage();
     }
 
-    string line;
-    while (transcript.good()) {
-        getline(transcript, line);
-        digest(line);
-    }
+    string t_name;
+    while (list.good()) {
+        cout << "." << endl;
+        getline(list, t_name);
 
-    displayResults(filename);
+        ifstream transcript;
+        transcript.open(transcripts_directory + t_name);
+        if (!transcript) {
+            cerr << "Error opening transcript file: " << t_name << endl;
+            Usage();
+        }
+
+        string line;
+        while (transcript.good()) {
+            getline(transcript, line);
+            digest(line);
+        }
+
+    writeResults(t_name);
+    members.clear(); //important!
+
+    }
 }
