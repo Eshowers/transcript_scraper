@@ -2,6 +2,11 @@
  * --------------------
  * Scrapes the transcript data, writing the data to a .csv file.
  *
+ * The transcript files must be formatted in the following manner:
+ * <name>:<contribution>
+ *
+ * Lines that do not contain a colon are ignored.
+ *
  * Usage:
  * Takes a .txt file of all file names to be scraped. This can be generated
  * by moving into the directory containing the .txt files and typing: "ls > list.txt"
@@ -36,7 +41,7 @@ static bool verbose = false; //will be silent unless an error occurs
 
 /* UTILS */
 
-//strips string of all alphanumeric chars
+//strips string of all alphanumeric chars, returns new string
 string strip(string in) {
     string final;
     for(size_t i = 0; i < in.length(); i++) {
@@ -66,16 +71,17 @@ bool isBlacklisted(string &name) {
     if (isalpha(c_name[0]) == 0) return true;
 
     //try and filter out the majority of things we don't want
+    //anything with this in the name is not a name
     if (name.find("Date") != string::npos) return true;
-    if (name.find(string("Time")) != string::npos) return true;
-    if (name.find(string("Segment")) != string::npos) return true;
-    if (name.find(string("Location")) != string::npos) return true;
-    if (name.find(string("Day")) != string::npos) return true;
-    if (name.find(string("Discussion")) != string::npos) return true;
-    if (name.find(string("Presentation")) != string::npos) return true;
-    if (name.find(string("Project")) != string::npos) return true;
-    if (name.find(string("Message")) != string::npos) return true;
-    if (name.find(string("Record")) != string::npos) return true;
+    if (name.find("Time") != string::npos) return true;
+    if (name.find("Segment") != string::npos) return true;
+    if (name.find("Location") != string::npos) return true;
+    if (name.find("Day") != string::npos) return true;
+    if (name.find("Discussion") != string::npos) return true;
+    if (name.find("Presentation") != string::npos) return true;
+    if (name.find("Project") != string::npos) return true;
+    if (name.find("Message") != string::npos) return true;
+    if (name.find("Record") != string::npos) return true;
 
     return false;
 }
@@ -87,9 +93,8 @@ bool isBlacklisted(string &name) {
  * associated with their name in the members map.
  */
 void digest(string & line, map<string, vector<string>> & members) {
-    size_t pos = line.find(":", 0);
+    size_t pos = line.find(":");
 
-    //the first occurance of ":" in the string will delineate the name
     string name;
     if (pos != string::npos) {
         name = strip(line.substr(0, pos)); //remove spaces from the name
@@ -99,10 +104,12 @@ void digest(string & line, map<string, vector<string>> & members) {
 
     if (isBlacklisted(name)) return;
 
+    //get vector from map, if it exists.
     vector<string> & contributions = members[name];
 
+    //the "response" will be whatever follows the first location of ":"
     string response = line.substr(pos);
-    contributions.push_back(response);
+    contributions.push_back(response); //inherently chronological
 }
 
 /* Function: countWordsInString(...) {}
@@ -114,10 +121,25 @@ size_t countWordsInString(string const& str) {
     std::string oneWord;
     size_t count = 0;
 
-    while(stream >> oneWord) {
-        ++count;
+    while(stream >> oneWord) { //separated by whitespace
+
+        //convert to lowercase
+        std::transform(oneWord.begin(), oneWord.end(), oneWord.begin(), ::tolower);
 
         //modify definitions of word here
+        if (oneWord.find("[laughter]") != string::npos) continue;
+        if (oneWord.find("[crosstalk]") != string::npos) continue;
+        if (oneWord.find("[inaudible]") != string::npos) continue;
+        if (oneWord.find("[pause]") != string::npos) continue;
+
+        if (oneWord.find("(laughter)") != string::npos) continue;
+        if (oneWord.find("(crosstalk)") != string::npos) continue;
+        if (oneWord.find("(inaudible)") != string::npos) continue;
+        if (oneWord.find("(pause)") != string::npos) continue;
+
+        //question... should we filter here if we don't know it to be exhaustive (extraneous bracketing... spaces... etc).
+
+        ++count;
     }
 
     return count;
@@ -131,7 +153,7 @@ size_t countWordsInString(string const& str) {
 void analyzeContributions(vector<string> & responses, size_t & num_words, size_t & num_chars) {
     for (size_t i = 0; i < responses.size(); i++) {
         num_words += countWordsInString(responses[i]);
-        num_chars += responses[i].size();
+        num_chars += responses[i].size(); //will include whitespace
     }
     return;
 }
@@ -154,7 +176,7 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
     string group_name = filename.substr(0,pos);  //remove extension
 
     fstream outFile;
-    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::app);
+    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::app); //open the stream for writing, appending
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
@@ -205,11 +227,9 @@ int main(int argc, char **argv) {
     outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::trunc);
     if (!outFile) cerr << "Unable to initialize .csv file" << endl;
 
-    //can farther parse group ID!
-
     //Fields of the .csv. Modify these if you change the way the .csv is written.
     outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
-               "Average contribution length (words),Average contribution length (chars)" << endl;
+               "Average contribution length (words),Average contribution length (chars),Vector ====>" << endl;
 
     string t_name;
     while (list.good()) {
