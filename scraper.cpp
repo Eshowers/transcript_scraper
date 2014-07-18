@@ -76,6 +76,7 @@ bool isBlacklisted(string &name) {
     if (name.find(string("Project")) != string::npos) return true;
     if (name.find(string("Message")) != string::npos) return true;
     if (name.find(string("Record")) != string::npos) return true;
+
     return false;
 }
 
@@ -132,7 +133,6 @@ void analyzeContributions(vector<string> & responses, size_t & num_words, size_t
         num_words += countWordsInString(responses[i]);
         num_chars += responses[i].size();
     }
-
     return;
 }
 
@@ -150,7 +150,6 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
         cout << endl;
     }
 
-
     size_t pos = filename.find_last_of('.');
     string group_name = filename.substr(0,pos);  //remove extension
 
@@ -159,9 +158,10 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
-        size_t num_words = 0;
-        size_t num_chars = 0;
+        size_t num_words = 0; //populated by analyzeContrbutions
+        size_t num_chars = 0; //populated by analyzeContributions
         analyzeContributions(iterator->second, num_words, num_chars);
+
         if (verbose) {
             cout << "Participant: " << iterator->first << endl;
             cout << "Number of contributions: " << iterator->second.size() << endl;
@@ -172,12 +172,17 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
             cout << endl;
         }
 
+        //Fields of the .csv. Modify these if you change the way the .csv is written.
+        // GroupID,Participant,Number of contributions,Number of words,Number of characters,
+        // Average contribution length (words),Average contribution length (chars), <vector of response sizes (number of words)>
+
         outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
                 << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << ",";
 
-        for (size_t = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ",";
+        //iterates through vector, counting the number of words at each position, and writing to the .csv
+        for (size_t i = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ",";
 
-        outFile << endl;
+        outFile << endl; // denotes end of "entry"
     }
 
     //also should generate a CSV with all of participant's responses!
