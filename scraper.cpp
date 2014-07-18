@@ -5,7 +5,16 @@
  * The transcript files must be formatted in the following manner:
  * <name>:<contribution>
  *
- * Lines that do not contain a colon are ignored.
+ * Lines that do not contain a colon are ignored. If the contribution spills over onto
+ * the next line, it is ignored. i.e. in this situation:
+ *
+ * <name>:<contribution>
+ * <more contribution is here>
+ *
+ * The second line will not be considered in the tabulation. This is a result
+ * of transcriber error.
+ *
+ * ------------------
  *
  * Usage:
  * Takes a .txt file of all file names to be scraped. This can be generated
@@ -202,7 +211,7 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
                 << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << ",";
 
         //iterates through vector, counting the number of words at each position, and writing to the .csv
-        for (size_t i = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ",";
+        for (size_t i = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ","; //extra comma at end not a problem
 
         outFile << endl; // denotes end of "entry"
     }
