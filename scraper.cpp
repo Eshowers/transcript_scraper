@@ -78,16 +78,6 @@ bool isBlacklisted(string &name) {
     return false;
 }
 
-
-bool string_is_valid(const std::string &str)
-{
-    return find_if(str.begin(), str.end(),
-        [](char c) { return !(isalnum(c)); }) == str.end();
-}
-
-static int num_got = 0;
-static int num_missed = 0;
-
 /* Function: digest(...) {}
  * -----------------------------------------------
  * Finds the first instance of ":" in the line, delineating the participant's name.
@@ -102,13 +92,8 @@ void digest(string & line, map<string, vector<string>> & members) {
     if (pos != string::npos) {
         name = line.substr(0, pos);
         trim(name);
-        num_got++;
     } else {
-        if (line.size() > 3) {
-            //cout << "[LEN: " << line.size() << "]" << endl;
-            //cout << line << endl;
-            num_missed++;
-        }
+        return;
     }
 
     if (isBlacklisted(name)) return;
@@ -237,8 +222,4 @@ int main(int argc, char **argv) {
         writeResults(t_name, members);
         if (verbose) cout << t_name << endl;
     }
-
-    cout << "Number analyzed (total) " << num_missed+num_got << endl;
-    cout << "Number missed " << num_missed << endl;
-    cout << "Number valid " << num_got << endl;
 }
