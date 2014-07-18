@@ -26,6 +26,7 @@
 #include <functional>
 #include <cctype>
 #include <locale>
+#include <string>
 
 using namespace std;
 
@@ -35,23 +36,14 @@ static bool verbose = false; //will be silent unless an error occurs
 
 /* UTILS */
 
-// trim from start
-static inline std::string &ltrim(std::string &s) {
-        s.erase(s.begin(), std::find_if(s.begin(), s.end(), std::not1(std::ptr_fun<int, int>(std::isspace))));
-        return s;
+//strips string of all alphanumeric chars
+string strip(string in) {
+    string final;
+    for(size_t i = 0; i < in.length(); i++) {
+        if(isalnum(in[i])) final += in[i];
+    }
+    return final;
 }
-
-// trim from end
-static inline std::string &rtrim(std::string &s) {
-        s.erase(std::find_if(s.rbegin(), s.rend(), std::not1(std::ptr_fun<int, int>(std::isspace))).base(), s.end());
-        return s;
-}
-
-// trim from both ends
-static inline std::string &trim(std::string &s) {
-        return ltrim(rtrim(s));
-}
-
 
 /* Function: Usage(...) {}
  * -----------------------------------------------
@@ -71,10 +63,19 @@ bool isBlacklisted(string &name) {
 
     const char * c_name = name.c_str();
     //names must begin with letters (takes care of timestamps)
-    if (isalpha(c_name[1]) == 0) return true;
+    if (isalpha(c_name[0]) == 0) return true;
 
-    if (name == "Date") return true;
-    if (name == "Time") return true;
+    //try and filter out the majority of things we don't want
+    if (name.find("Date") != string::npos) return true;
+    if (name.find(string("Time")) != string::npos) return true;
+    if (name.find(string("Segment")) != string::npos) return true;
+    if (name.find(string("Location")) != string::npos) return true;
+    if (name.find(string("Day")) != string::npos) return true;
+    if (name.find(string("Discussion")) != string::npos) return true;
+    if (name.find(string("Presentation")) != string::npos) return true;
+    if (name.find(string("Project")) != string::npos) return true;
+    if (name.find(string("Message")) != string::npos) return true;
+    if (name.find(string("Record")) != string::npos) return true;
     return false;
 }
 
@@ -90,8 +91,7 @@ void digest(string & line, map<string, vector<string>> & members) {
     //the first occurance of ":" in the string will delineate the name
     string name;
     if (pos != string::npos) {
-        name = line.substr(0, pos);
-        trim(name);
+        name = strip(line.substr(0, pos)); //remove spaces from the name
     } else {
         return;
     }
@@ -132,6 +132,8 @@ void analyzeContributions(vector<string> & responses, size_t & num_words, size_t
         num_words += countWordsInString(responses[i]);
         num_chars += responses[i].size();
     }
+
+    return;
 }
 
 /* Function: writeResults(...) {}
@@ -171,11 +173,15 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
         }
 
         outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
-                << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << endl;
+                << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << ",";
+
+        for (size_t = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ",";
+
+        outFile << endl;
     }
 
     //also should generate a CSV with all of participant's responses!
-    //(i.e. with name <group_name_PARTICIPANT_NAME> (just an interation of the vector))
+    //(i.e. with name <group_name_PARTICIPANT_NAME> (just an interation of the vector))... can do this for the linear extraction of transcripts
 }
 
 int main(int argc, char **argv) {
