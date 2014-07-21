@@ -18,16 +18,18 @@ of transcriber error.
 
  ------------------
 
- Usage:
- Takes a .txt file of all file names to be scraped. This can be generated
- by moving into the directory containing the .txt files and typing: "ls > list.txt"
- Move the list.txt into the directory of the executable, edit it, and remove
- the line that contains "list.txt"
-
- Usage: ./scraper list.txt
-
- Will generate a .csv file called "transcript_aggregate_data.csv" in the
- directory of the executable, which can be opened in excel.
-
- Important: If a file of the name "transcript_aggregate_data.csv" exists
- in the directory of the executable, it's contents will be overwritten.
+ * Usage:
+ * Takes a .txt file of all file names to be scraped. This can be generated
+ * by moving into the directory containing the .txt files and typing: "ls > list.txt"
+ * Move the list.txt into the directory of the executable, edit it, and remove
+ * the line that contains "list.txt"
+ *
+ * Usage: ./scraper list.txt
+ *
+ * Will generate a .csv file called "transcript_aggregate_stream.csv" in the
+ * directory of the executable, which can be opened in excel.
+ *
+ * Important: If a file of the name "transcript_aggregate_stream.csv" exists
+ * in the directory of the executable, it's contents will be overwritten.
+ *
+ * To open in excel, select import, choose CSV, then select the tab character as the delimiter.
