@@ -93,6 +93,9 @@ bool isBlacklisted(string &name) {
     if (name.find("Project") != string::npos) return true;
     if (name.find("Message") != string::npos) return true;
     if (name.find("Record") != string::npos) return true;
+    if (name.find("Respondent") != string::npos) return true;
+    //if (name.find("Unknown") != string::npos) return true;
+    //if (name.find("Unidentified") != string::npos) return true;
 
     return false;
 }
