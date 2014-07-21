@@ -24,10 +24,10 @@
  *
  * Usage: ./scraper list.txt
  *
- * Will generate a .csv file called "transcript_aggregate_data.csv" in the
+ * Will generate a .csv file called "transcript_aggregate_stream.csv" in the
  * directory of the executable, which can be opened in excel.
  *
- * Important: If a file of the name "transcript_aggregate_data.csv" exists
+ * Important: If a file of the name "transcript_aggregate_stream.csv" exists
  * in the directory of the executable, it's contents will be overwritten.
  */
 
@@ -183,7 +183,7 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
     string group_name = filename.substr(0,pos);  //remove extension
 
     fstream outFile;
-    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::app); //open the stream for writing, appending
+    outFile.open("transcript_aggregate_stream.csv", fstream::out | fstream::app); //open the stream for writing, appending
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
@@ -202,16 +202,13 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
         }
 
         //Fields of the .csv. Modify these if you change the way the .csv is written.
-        // GroupID,Participant,Number of contributions,Number of words,Number of characters,
-        // Average contribution length (words),Average contribution length (chars), <vector of response sizes (number of words)>
+        outFile << "GroupID,Participant,Response,Number of words,Number of characters" << endl;
 
-        outFile << group_name << "," << iterator->first << "," << iterator->second.size() << "," << num_words << ","
-                << num_chars << "," << num_words / iterator->second.size() << "," << num_chars / iterator->second.size() << ",";
+        for (size_t i = 0; i < iterator->second.size(); i++) {
+            outFile << group_name << "," << iterator->first << "," << iterator->second[i] << ","
+                    << countWordsInString(iterator->second[i]) << "," << iterator->second[i].size() << endl;
 
-        //iterates through vector, counting the number of words at each position, and writing to the .csv
-        for (size_t i = 0; i < iterator->second.size(); i++) outFile << countWordsInString(iterator->second[i]) << ","; //extra comma at end not a problem
-
-        outFile << endl; // denotes end of "entry"
+        }
     }
 
     //also should generate a CSV with all of participant's responses!
@@ -231,12 +228,11 @@ int main(int argc, char **argv) {
 
     //initialize outfile
     fstream outFile;
-    outFile.open("transcript_aggregate_data.csv", fstream::out | fstream::trunc);
+    outFile.open("transcript_aggregate_stream.csv", fstream::out | fstream::trunc);
     if (!outFile) cerr << "Unable to initialize .csv file" << endl;
 
     //Fields of the .csv. Modify these if you change the way the .csv is written.
-    outFile << "GroupID,Participant,Number of contributions,Number of words,Number of characters," <<
-               "Average contribution length (words),Average contribution length (chars),Vector ====>" << endl;
+    outFile << "GroupID,Participant,Response,Number of words,Number of characters" << endl;
 
     string t_name;
     while (list.good()) {
