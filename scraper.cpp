@@ -29,6 +29,8 @@
  *
  * Important: If a file of the name "transcript_aggregate_stream.csv" exists
  * in the directory of the executable, it's contents will be overwritten.
+ *
+ * To open in excel, select import, choose CSV, then select the tab character as the delimiter.
  */
 
 #include <fstream>
@@ -148,11 +150,11 @@ void digest(string & group_name, string & line, fstream & f) {
     string response = line.substr(pos + 1);
     response.erase(std::remove(response.begin(), response.end(), '\n'), response.end());
     response.erase(std::remove(response.begin(), response.end(), '\r'), response.end());
+    response.erase(std::remove(response.begin(), response.end(), '\t'), response.end());
 
     //Fields of the .csv. Modify these if you change the way the .csv is written.
-    //Fields of the .csv. Modify these if you change the way the .csv is written.
-    //outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
-    f << group_name << 0x09 << name << 0x09 << response << 0x09 << countWordsInString(response) << 0x09 << response.size() << endl;
+    //outFile << "GroupID\tParticipant\tResponse\tNumber of words\tNumber of characters" << endl;
+    f << group_name << "\t" << name << "\t" << response << "\t" << countWordsInString(response) << "\t" << response.size() << endl;
 }
 
 /* Function: analyzeContributions(...) {}
@@ -166,34 +168,6 @@ void analyzeContributions(vector<string> & responses, size_t & num_words, size_t
         num_chars += responses[i].size(); //will include whitespace
     }
     return;
-}
-
-/* Function: writeResults(...) {}
- * -----------------------------------------------
- * Takes data structure, tabulates necessary statistics, and writes it to the .csv
- */
-void writeResults(string & filename, map<string, vector<string>> & members) {
-
-    size_t pos = filename.find_last_of('.');
-    string group_name = filename.substr(0,pos);  //remove extension
-
-    fstream outFile;
-    outFile.open("transcript_aggregate_stream.csv", fstream::out | fstream::app); //open the stream for writing, appending
-
-    for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
-
-        //Fields of the .csv. Modify these if you change the way the .csv is written.
-        //Fields of the .csv. Modify these if you change the way the .csv is written.
-        //outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
-
-        //note, must import into excel and specify TAB as the separator
-        for (size_t i = 0; i < iterator->second.size(); i++) {
-            outFile << group_name << "&" << iterator->first << "&" << iterator->second[i] << "&" << countWordsInString(iterator->second[i]) << "&" << iterator->second[i].size() << endl;
-        }
-    }
-
-    //also should generate a CSV with all of participant's responses!
-    //(i.e. with name <group_name_PARTICIPANT_NAME> (just an interation of the vector))... can do this for the linear extraction of transcripts
 }
 
 int main(int argc, char **argv) {
@@ -213,7 +187,7 @@ int main(int argc, char **argv) {
     if (!outFile) cerr << "Unable to initialize .csv file" << endl;
 
     //Fields of the .csv. Modify these if you change the way the .csv is written.
-    outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
+    outFile << "GroupID\tParticipant\tResponse\tNumber of words\tNumber of characters" << endl;
 
     string t_name;
     while (list.good()) {
