@@ -133,20 +133,18 @@ size_t countWordsInString(string const& str) {
     while(stream >> oneWord) { //separated by whitespace
 
         //convert to lowercase
-        std::transform(oneWord.begin(), oneWord.end(), oneWord.begin(), ::tolower);
+        //std::transform(oneWord.begin(), oneWord.end(), oneWord.begin(), ::tolower);
 
         //modify definitions of word here
-        if (oneWord.find("[laughter]") != string::npos) continue;
-        if (oneWord.find("[crosstalk]") != string::npos) continue;
-        if (oneWord.find("[inaudible]") != string::npos) continue;
-        if (oneWord.find("[pause]") != string::npos) continue;
+        // if (oneWord.find("[laughter]") != string::npos) continue;
+        // if (oneWord.find("[crosstalk]") != string::npos) continue;
+        // if (oneWord.find("[inaudible]") != string::npos) continue;
+        // if (oneWord.find("[pause]") != string::npos) continue;
 
-        if (oneWord.find("(laughter)") != string::npos) continue;
-        if (oneWord.find("(crosstalk)") != string::npos) continue;
-        if (oneWord.find("(inaudible)") != string::npos) continue;
-        if (oneWord.find("(pause)") != string::npos) continue;
-
-        //question... should we filter here if we don't know it to be exhaustive (extraneous bracketing... spaces... etc).
+        // if (oneWord.find("(laughter)") != string::npos) continue;
+        // if (oneWord.find("(crosstalk)") != string::npos) continue;
+        // if (oneWord.find("(inaudible)") != string::npos) continue;
+        // if (oneWord.find("(pause)") != string::npos) continue;
 
         ++count;
     }
