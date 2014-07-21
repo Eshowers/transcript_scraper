@@ -117,7 +117,9 @@ void digest(string & line, map<string, vector<string>> & members) {
     vector<string> & contributions = members[name];
 
     //the "response" will be whatever follows the first location of ":"
-    string response = line.substr(pos);
+    string response = line.substr(pos + 1);
+    response.erase(std::remove(response.begin(), response.end(), '\n'), response.end());
+    response.erase(std::remove(response.begin(), response.end(), '\r'), response.end());
     contributions.push_back(response); //inherently chronological
 }
 
@@ -170,14 +172,6 @@ void analyzeContributions(vector<string> & responses, size_t & num_words, size_t
  * Takes data structure, tabulates necessary statistics, and writes it to the .csv
  */
 void writeResults(string & filename, map<string, vector<string>> & members) {
-    if (verbose) {
-        cout << endl;
-        cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-        cout << "Outputting results" << endl;
-        cout << "Filename: " << filename << endl;
-        cout << "=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=" << endl;
-        cout << endl;
-    }
 
     size_t pos = filename.find_last_of('.');
     string group_name = filename.substr(0,pos);  //remove extension
@@ -187,27 +181,13 @@ void writeResults(string & filename, map<string, vector<string>> & members) {
 
     for(auto iterator = members.begin(); iterator != members.end(); iterator++) {
 
-        size_t num_words = 0; //populated by analyzeContrbutions
-        size_t num_chars = 0; //populated by analyzeContributions
-        analyzeContributions(iterator->second, num_words, num_chars);
-
-        if (verbose) {
-            cout << "Participant: " << iterator->first << endl;
-            cout << "Number of contributions: " << iterator->second.size() << endl;
-            cout << "Number of words: " << num_words << endl;
-            cout << "Number of characters: " << num_chars << endl;
-            cout << "Average contribution length (words): " << num_words / iterator->second.size() << endl;
-            cout << "Average contribution length (chars): " << num_chars / iterator->second.size() << endl;
-            cout << endl;
-        }
-
         //Fields of the .csv. Modify these if you change the way the .csv is written.
-        outFile << "GroupID,Participant,Response,Number of words,Number of characters" << endl;
+        //Fields of the .csv. Modify these if you change the way the .csv is written.
+        //outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
 
+        //note, must import into excel and specify TAB as the separator
         for (size_t i = 0; i < iterator->second.size(); i++) {
-            outFile << group_name << "," << iterator->first << "," << iterator->second[i] << ","
-                    << countWordsInString(iterator->second[i]) << "," << iterator->second[i].size() << endl;
-
+            outFile << group_name << "&" << iterator->first << "&" << iterator->second[i] << "&" << countWordsInString(iterator->second[i]) << "&" << iterator->second[i].size() << endl;
         }
     }
 
@@ -232,7 +212,7 @@ int main(int argc, char **argv) {
     if (!outFile) cerr << "Unable to initialize .csv file" << endl;
 
     //Fields of the .csv. Modify these if you change the way the .csv is written.
-    outFile << "GroupID,Participant,Response,Number of words,Number of characters" << endl;
+    outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
 
     string t_name;
     while (list.good()) {
