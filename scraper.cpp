@@ -95,34 +95,6 @@ bool isBlacklisted(string &name) {
     return false;
 }
 
-/* Function: digest(...) {}
- * -----------------------------------------------
- * Finds the first instance of ":" in the line, delineating the participant's name.
- * If the name is not blacklisted, the responses is added to the vector of contributions
- * associated with their name in the members map.
- */
-void digest(string & line, map<string, vector<string>> & members) {
-    size_t pos = line.find(":");
-
-    string name;
-    if (pos != string::npos) {
-        name = strip(line.substr(0, pos)); //remove spaces from the name
-    } else {
-        return;
-    }
-
-    if (isBlacklisted(name)) return;
-
-    //get vector from map, if it exists.
-    vector<string> & contributions = members[name];
-
-    //the "response" will be whatever follows the first location of ":"
-    string response = line.substr(pos + 1);
-    response.erase(std::remove(response.begin(), response.end(), '\n'), response.end());
-    response.erase(std::remove(response.begin(), response.end(), '\r'), response.end());
-    contributions.push_back(response); //inherently chronological
-}
-
 /* Function: countWordsInString(...) {}
  * -----------------------------------------------
  * Counts words in a string using a stringstream
@@ -152,6 +124,35 @@ size_t countWordsInString(string const& str) {
     }
 
     return count;
+}
+
+/* Function: digest(...) {}
+ * -----------------------------------------------
+ * Finds the first instance of ":" in the line, delineating the participant's name.
+ * If the name is not blacklisted, the responses is added to the vector of contributions
+ * associated with their name in the members map.
+ */
+void digest(string & group_name, string & line, fstream & f) {
+    size_t pos = line.find(":");
+
+    string name;
+    if (pos != string::npos) {
+        name = strip(line.substr(0, pos)); //remove spaces from the name
+    } else {
+        return;
+    }
+
+    if (isBlacklisted(name)) return;
+
+    //the "response" will be whatever follows the first location of ":"
+    string response = line.substr(pos + 1);
+    response.erase(std::remove(response.begin(), response.end(), '\n'), response.end());
+    response.erase(std::remove(response.begin(), response.end(), '\r'), response.end());
+
+    //Fields of the .csv. Modify these if you change the way the .csv is written.
+    //Fields of the .csv. Modify these if you change the way the .csv is written.
+    //outFile << "GroupID&Participant&Response&Number of words&Number of characters" << endl;
+    f << group_name << 0x09 << name << 0x09 << response << 0x09 << countWordsInString(response) << 0x09 << response.size() << endl;
 }
 
 /* Function: analyzeContributions(...) {}
@@ -227,13 +228,14 @@ int main(int argc, char **argv) {
             continue;
         }
 
+        size_t pos = t_name.find_last_of('.');
+        string group_name = t_name.substr(0,pos);  //remove extension
+
         string line;
         while (transcript.good()) {
             getline(transcript, line);
-            digest(line, members);
+            digest(group_name, line, outFile);
         }
-
-        writeResults(t_name, members);
         if (verbose) cout << t_name << endl;
     }
 }
