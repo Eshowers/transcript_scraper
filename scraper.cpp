@@ -128,7 +128,7 @@ size_t countWordsInString(string const& str) {
         ++count;
     }
 
-    return count;
+    return (count <= 1) ? 1 : count - 1; //stops overcounting (was persistent due to spaces)
 }
 
 /* Function: digest(...) {}
